@@ -5,12 +5,12 @@ Parses JSON output of `SELECT * from system:indexes;` to N1QL "CREATE INDEX" sta
 
 ## Build
 
-`cargo build`
+`cargo build --release`
 
 ## Run
 
 ```
-./target/debug/gen-indexes -h
+./target/release/gen-indexes -h
 
 Couchbase index definition generator 
 Parses JSON output of `SELECT * from system:indexes;`
