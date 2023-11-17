@@ -1,4 +1,5 @@
-*indexes.json
+*.json
+*.n1ql
 rust-toolchain
 target
 Cargo.lock
