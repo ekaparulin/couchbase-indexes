@@ -1,5 +1,6 @@
 use clap::{App, Arg};
 use std::fs;
+use std::collections::BTreeMap;
 
 mod indexes;
 
@@ -51,17 +52,24 @@ fn main() {
     if bucket.is_some() {
       eprintln!("Filtering by bucket: {}", bucket.unwrap());
     }
-
   }
 
   let contents = fs::read_to_string(input_file)
   .expect("Should have been able to read the file");
 
+  let mut sorted: BTreeMap<String, String>   = BTreeMap::new();
+
   for indexes in serde_json::from_str::<indexes::Indexes>(&contents).unwrap().iter() {
       let idx = indexes.get("indexes").unwrap();
       let n1ql = idx.to_n1ql(bucket, Some(if_not_exists), Some(defer_build));
       if n1ql.is_some() {
-        println!("{}",n1ql.unwrap());
+        sorted.insert( idx.name(), n1ql.unwrap());
       }
   }
+
+  for (_, n1ql) in sorted {
+    println!("{}", n1ql);
+  }
+
+
 }

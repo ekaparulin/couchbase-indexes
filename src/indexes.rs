@@ -20,6 +20,10 @@ pub struct Index {
 }
 
 impl Index {
+  pub fn name(&self) -> String {
+    return self.name.to_string()
+  }
+
   pub fn to_n1ql(&self, bucket: Option<&str>, if_not_exists: Option<bool>, defer_build: Option<bool>) -> Option<String> {
 
     let mut qry: String = "".to_string();
