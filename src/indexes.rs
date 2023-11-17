@@ -12,7 +12,7 @@ pub struct Index {
     id: String,
     index_key: Vec<String>,       //
     keyspace_id: String,          //
-    metadata: Map<String, Value>,
+    metadata: Option<Map<String, Value>>,
     namespace_id: String,         //
     partition: Option<String>,    //
     state: String,
@@ -62,19 +62,21 @@ impl Index {
       qry.push_str(&format!("\n WHERE {} ",self.condition.as_ref().unwrap()));
     }
 
-    if !self.metadata.is_empty() {
-      let mut m: Vec<std::string::String> = vec![];
-      for (k, v) in self.metadata.iter() {
-        m.push(format!("\"{}\": {}", k, v.to_string()));
+    let mut with: Vec<std::string::String> = vec![];
+    if self.metadata.is_some() {
+      for (k, v) in self.metadata.as_ref().unwrap().iter() {
+        with.push(format!("\"{}\": {}", k, v.to_string()));
       }
-
-      if defer_build.is_some() && defer_build.unwrap() {
-        m.push(format!("\"{}\": {}", "defer_build", "true"));
-      }
-
-      qry.push_str(&format!("\n WITH {{ {} }};\n", m.join(", ")));
-
     }
+
+    if defer_build.is_some() && defer_build.unwrap() {
+      with.push(format!("\"{}\": {}", "defer_build", "true"));
+    }
+
+    if with.len() > 0 {
+      qry.push_str(&format!("\n WITH {{ {} }};", with.join(", ")));
+    }
+
     return Some(qry);
   }
 }

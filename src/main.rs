@@ -68,7 +68,7 @@ fn main() {
   }
 
   for (_, n1ql) in sorted {
-    println!("{}", n1ql);
+    println!("{}\n", n1ql);
   }
 
 
