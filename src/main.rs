@@ -6,7 +6,6 @@ mod indexes;
 
 fn main() {
 
-
   let mut cmd = Command::new("Couchbase index definition generator")
       .bin_name("gen-indexes")
       .arg(Arg::new("input")
@@ -68,8 +67,6 @@ fn main() {
     //   num_replica = Some(matches.value_of("num_replica").unwrap().parse::<u8>().unwrap());
     num_replica = Some(matches.get_one::<String>("num_replica").map(String::as_str).unwrap().parse::<u8>().unwrap());
   }
-  println!("Num replica {:?}", num_replica);
-
 
   let bucket= matches.get_one::<std::string::String>("bucket");
 
