@@ -1,4 +1,4 @@
-use clap::{App, Arg};
+use clap::{Command, Arg, ArgAction};
 use std::fs;
 use std::collections::BTreeMap;
 
@@ -6,46 +6,72 @@ mod indexes;
 
 fn main() {
 
-  let matches = App::new("Couchbase index definition generator")
-    .about("Parses JSON output of `SELECT * from system:indexes;` \nto N1QL statements")
-    .arg(
-        Arg::new("input")
-            .value_name("FILE")
-            .index(1)
-            .required(true),
-    )
-    .arg(
-        Arg::new("verbose")
-            .help("Enabled verbose output")
+
+  let mut cmd = Command::new("Couchbase index definition generator")
+      .bin_name("gen-indexes")
+      .arg(Arg::new("input")
+            .help("Input file")
+            .short('i')
+            .long("input")
+            .value_name("INPUT_FILE")
+            .action(ArgAction::Set))
+      .arg(Arg::new("verbose")
+            .help("Enable verbose output")
             .short('v')
             .long("verbose")
-    )
-    .arg(
-        Arg::new("if_not_exists")
+            .action(ArgAction::SetTrue)
+      )
+      .arg(Arg::new("if_not_exists")
             .help("Add IF NOT EXISTS option")
             .short('n')
             .long("if-not-exists")
-    )
-    .arg(
-        Arg::new("defer_build")
+            .action(ArgAction::SetTrue)
+      )
+      .arg(Arg::new("defer_build")
             .help("Defer build")
             .short('d')
             .long("defer-build")
-    )
-    .arg(
-      Arg::new("bucket")
-          .value_name("BUCKET")
-          .help("Filter by bucket")
-          .short('b')
-          .long("bucket")
-  )
-    .get_matches();
+            .action(ArgAction::SetTrue)
+      )
+      .arg(Arg::new("num_replica")
+            .help("Set replica number")
+            .short('r')
+            .long("num-replica")
+            .action(ArgAction::Set)
+      )
+      .arg(Arg::new("bucket")
+            .value_name("BUCKET")
+            .help("Filter by bucket")
+            .short('b')
+            .long("bucket")
+            .action(ArgAction::Set)
+      );
+    let matches = cmd.clone().get_matches();
 
-  let input_file = matches.value_of("input").unwrap();
-  let is_verbose = matches.is_present("verbose");
-  let if_not_exists = matches.is_present("if_not_exists");
-  let defer_build = matches.is_present("defer_build");
-  let bucket= matches.value_of("bucket");
+
+  
+  if matches.get_one::<std::string::String>("input").is_none() {
+    //panic!("Missing input file");
+    let _ = cmd.print_long_help();
+    std::process::exit(1);
+  }
+
+  let input_file = matches.get_one::<std::string::String>("input").unwrap();
+
+  let is_verbose = matches.get_flag("verbose");
+
+  let if_not_exists = matches.get_flag("if_not_exists");
+  let defer_build = matches.get_flag("defer_build");
+
+  let mut num_replica: Option<u8> = None;
+  if matches.get_one::<String>("num_replica").map(String::as_str).is_some() {
+    //   num_replica = Some(matches.value_of("num_replica").unwrap().parse::<u8>().unwrap());
+    num_replica = Some(matches.get_one::<String>("num_replica").map(String::as_str).unwrap().parse::<u8>().unwrap());
+  }
+  println!("Num replica {:?}", num_replica);
+
+
+  let bucket= matches.get_one::<std::string::String>("bucket");
 
   if is_verbose {
     eprintln!("Using input file: {}", input_file);
@@ -61,7 +87,7 @@ fn main() {
 
   for indexes in serde_json::from_str::<indexes::Indexes>(&contents).unwrap().iter() {
       let idx = indexes.get("indexes").unwrap();
-      let n1ql = idx.to_n1ql(bucket, Some(if_not_exists), Some(defer_build));
+      let n1ql = idx.to_n1ql(bucket, Some(if_not_exists), Some(defer_build), num_replica);
       if n1ql.is_some() {
         sorted.insert( idx.name(), n1ql.unwrap());
       }

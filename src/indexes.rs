@@ -24,11 +24,12 @@ impl Index {
     return self.name.to_string()
   }
 
-  pub fn to_n1ql(&self, bucket: Option<&str>, if_not_exists: Option<bool>, defer_build: Option<bool>) -> Option<String> {
+  pub fn to_n1ql(&self, bucket: Option<&std::string::String>, if_not_exists: Option<bool>, 
+    defer_build: Option<bool>, num_replica: Option<u8>) -> Option<String> {
 
     let mut qry: String = "".to_string();
 
-    if bucket.is_some() && bucket.unwrap() != self.keyspace_id.to_string() {
+    if bucket.is_some() && bucket.unwrap() != &self.keyspace_id.to_string() {
       return None;
     }
 
@@ -62,19 +63,31 @@ impl Index {
       qry.push_str(&format!("\n WHERE {} ",self.condition.as_ref().unwrap()));
     }
 
-    let mut with: Vec<std::string::String> = vec![];
+    let mut with: HashMap<std::string::String,std::string::String> = HashMap::new();
     if self.metadata.is_some() {
       for (k, v) in self.metadata.as_ref().unwrap().iter() {
-        with.push(format!("\"{}\": {}", k, v.to_string()));
+        with.insert(k.to_string(), v.to_string());
       }
     }
 
     if defer_build.is_some() && defer_build.unwrap() {
-      with.push(format!("\"{}\": {}", "defer_build", "true"));
+      with.insert("defer_build".to_string(), "true".to_string());
+
+    }
+
+    //num_replica
+    if num_replica.is_some() {
+      with.insert("num_replica".to_string(), num_replica.unwrap().to_string());
+    }
+
+    // Iterate over everything.
+    let mut with_vec: Vec::<String>= vec![];
+    for (k, v) in &with {
+      with_vec.push(format!("\"{k}\": {v}"));
     }
 
     if with.len() > 0 {
-      qry.push_str(&format!("\n WITH {{ {} }};", with.join(", ")));
+      qry.push_str(&format!("\n WITH {{ {} }};", with_vec.join(", ")));
     }
 
     return Some(qry);
