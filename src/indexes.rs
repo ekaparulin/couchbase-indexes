@@ -39,8 +39,7 @@ impl Index {
       qry.push_str("PRIMARY ");
     }
 
-    qry.push_str("INDEX ");
-    qry.push_str(&self.name.to_string());
+    qry.push_str(&format!("INDEX `{}`", self.name.to_string()));
 
     let mut ne = "";
     if if_not_exists.is_some() && if_not_exists.unwrap() {
